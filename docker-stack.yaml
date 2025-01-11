@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  app:
+    image: laravel-crm-app:latest
+    deploy:
+      replicas: 2
+      restart_policy:
+        condition: on-failure
+    environment:
+      APP_NAME: "${APP_NAME}"
+      APP_ENV: "${APP_ENV}"
+      APP_KEY: "${APP_KEY}"
+      APP_DEBUG: "${APP_DEBUG}"
+      APP_URL: "https://crm.seudominio.com"
+      DB_CONNECTION: "mysql"
+      DB_HOST: "sua_ip_mysql_externo"  # Substitua pelo IP ou hostname do seu MySQL externo
+      DB_PORT: 3306
+      DB_DATABASE: "${DB_DATABASE}"
+      DB_USERNAME: "${DB_USERNAME}"
+      DB_PASSWORD: "${DB_PASSWORD}"
+    networks:
+      - sua_rede_traefik  # Substitua pelo nome da sua rede Traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.laravelcrm.entrypoints=websecure"
+      - "traefik.http.routers.laravelcrm.rule=Host(`crm.seudominio.com`)"
+      - "traefik.http.services.laravelcrm.loadbalancer.server.port=80" # Ou a porta que sua aplicação escuta
+      - "traefik.http.routers.laravelcrm.tls.certresolver=le" # Se você estiver usando Let's Encrypt
+
+networks:
+  sua_rede_traefik: # Substitua pelo nome da sua rede Traefik
+    external: true
