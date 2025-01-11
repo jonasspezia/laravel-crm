@@ -1,37 +1,38 @@
-# Usar a imagem oficial do PHP com FPM
 FROM php:8.1-fpm
 
-# Instalar dependências do sistema
+# Etapa 2: Instalar extensões e dependências do PHP
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpng-dev \
     libjpeg62-turbo-dev \
     libfreetype6-dev \
-    locales \
+    libonig-dev \
+    libxml2-dev \
+    libzip-dev \
     zip \
-    jpegoptim optipng pngquant gifsicle \
-    vim \
     unzip \
     git \
     curl
 
-# Instalar extensões do PHP
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+# Etapa 3: Instalar extensões do PHP
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
 
-# Instalar Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Etapa 4: Configurar o diretório de trabalho
+WORKDIR /var/www
 
-# Definir o diretório de trabalho
-WORKDIR /var/www/html
+# Etapa 5: Instalar o Composer
+COPY --from=composer:2.5 /usr/bin/composer /usr/bin/composer
 
-# Copiar o arquivo de configuração PHP
-COPY ./php.ini /usr/local/etc/php/
+# Etapa 6: Copiar arquivos da aplicação
+COPY . /var/www
 
-# Garantir que as permissões estejam corretas
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+# Etapa 7: Configurar permissões
+RUN chown -R www-data:www-data /var/www \
+    && chmod -R 755 /var/www/storage
 
-# Expor a porta 9000 para PHP-FPM
+# Etapa 8: Instalar dependências do Composer
+RUN composer install --no-interaction --prefer-dist --optimize-autoloader
+
+# Etapa 9: Expor a porta 9000 e iniciar o PHP-FPM
 EXPOSE 9000
-
-# Comando de inicialização
 CMD ["php-fpm"]
